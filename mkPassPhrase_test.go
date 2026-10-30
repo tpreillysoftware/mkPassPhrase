@@ -337,6 +337,37 @@ func TestBinary_UsageAndFlagErrors(t *testing.T) {
 	}
 }
 
+func TestBinary_PrintDefaultWordList(t *testing.T) {
+	res := runBinary(t, "-p")
+
+	if res.exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d; stderr: %q", res.exitCode, res.stderr)
+	}
+	if res.stderr != "" {
+		t.Errorf("expected empty stderr, got %q", res.stderr)
+	}
+
+	lines := strings.Split(strings.TrimSuffix(res.stdout, "\n"), "\n")
+	if len(lines) != wordCount {
+		t.Fatalf("expected %d lines, got %d", wordCount, len(lines))
+	}
+
+	for i, line := range lines {
+		key, err := keyForIndex(i)
+		if err != nil {
+			t.Fatalf("unexpected key generation error for index %d: %v", i, err)
+		}
+		expectedWord, ok := defaultWordMap[key]
+		if !ok {
+			t.Fatalf("no word in defaultWordMap for key %s", key)
+		}
+		expectedLine := key + "," + expectedWord
+		if line != expectedLine {
+			t.Errorf("line %d = %q, want %q", i, line, expectedLine)
+		}
+	}
+}
+
 func TestBinary_HelpFlag(t *testing.T) {
 	for _, flagArg := range []string{"-h", "-help", "--help"} {
 		t.Run(flagArg, func(t *testing.T) {
@@ -348,7 +379,7 @@ func TestBinary_HelpFlag(t *testing.T) {
 			if !strings.Contains(res.stderr, "Usage:") {
 				t.Errorf("expected stderr to contain 'Usage:'; got: %q", res.stderr)
 			}
-			if !strings.Contains(res.stderr, "-w") || !strings.Contains(res.stderr, "-d") {
+			if !strings.Contains(res.stderr, "-w") || !strings.Contains(res.stderr, "-d") || !strings.Contains(res.stderr, "-p") {
 				t.Errorf("expected stderr to contain flag definitions; got: %q", res.stderr)
 			}
 		})

@@ -48,9 +48,10 @@ const (
 func main() {
 	wordListPath := flag.String("w", "", "path to a custom word list")
 	diceKey := flag.String("d", "", "five dice digits, each in the range 1-8")
+	printList := flag.Bool("p", false, "print the default word list to stdio as a csv")
 
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [-w <path-to-wordlist>] -d [1-8][1-8][1-8][1-8][1-8]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [-p] [-w <path-to-wordlist>] -d [1-8][1-8][1-8][1-8][1-8]\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 
@@ -58,6 +59,11 @@ func main() {
 
 	if flag.NArg() != 0 {
 		exitWithUsage("unexpected positional argument(s)")
+	}
+
+	if *printList {
+		printDefaultWordList()
+		return
 	}
 
 	if !validDiceKey(*diceKey) {
@@ -79,6 +85,21 @@ func main() {
 	}
 
 	fmt.Println(word)
+}
+
+func printDefaultWordList() {
+	writer := bufio.NewWriter(os.Stdout)
+	defer writer.Flush()
+
+	for i := 0; i < wordCount; i++ {
+		key, err := keyForIndex(i)
+		if err != nil {
+			break
+		}
+		if word, ok := defaultWordMap[key]; ok {
+			fmt.Fprintf(writer, "%s,%s\n", key, word)
+		}
+	}
 }
 
 func exitWithUsage(format string, args ...any) {
